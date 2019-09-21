@@ -1,0 +1,20 @@
+{
+  "name": "texlab/route",
+  "description": "Simple PHP router",
+  "license": "MIT",
+  "require-dev": {
+    "php": "^7.2",
+    "phpunit/phpunit": "^8.3"
+  },
+  "autoload": {
+    "psr-4": {
+      "Texlab\\Route\\": "src/"
+    }
+  },
+  "config": {
+    "process-timeout": 0
+  },
+  "scripts": {
+    "test": "phpunit --testsuite alltests"
+  }
+}
