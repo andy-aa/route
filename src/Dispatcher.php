@@ -2,41 +2,40 @@
 
 namespace Texlab\Route;
 
-class Dispatcher
+class Dispatcher implements DispatcherInterface
 {
     private $dispatcher;
     private $cleanUrl;
 
-    public function __construct(array $dispatcher)
+    public function __construct(array $dispatcher, bool $cleanUrl = true)
     {
         $this->dispatcher = $dispatcher;
+        $this->cleanUrl = $cleanUrl;
     }
 
-    public function decodeUri(string $uri): ?array
+    public function decodeUri(string $uri): array
     {
         foreach ($this->dispatcher as $pattern => $handler) {
             if (preg_match_all($this->getRegExp($pattern), $uri)) {
-
                 return ['handler' => $handler, 'vars' => $this->getVars($pattern, $uri)];
             }
         }
 
-        return null;
+        return [];
     }
 
-    public function getRegExp(string $pattern): string
+    private function getRegExp(string $pattern): string
     {
-
         $pattern = preg_replace(
             "~\\\{[0-9A-Za-z]+\\\}~i",
             "([0-9A-Za-z]+)",
             preg_quote($pattern)
         );
 
-        return "~^/$pattern$~i";
+        return "~^$pattern$~i";
     }
 
-    public function getVars(string $pattern, string $uri): array
+    private function getVars(string $pattern, string $uri): array
     {
         preg_match_all(
             "~\{([0-9A-Za-z]+)\}~i",
@@ -62,36 +61,40 @@ class Dispatcher
         return $vars;
     }
 
-    public function to(string $handler, array $vars = [])
+    public function encodeUri(string $handler, array $vars = []): string
     {
         if ($this->cleanUrl) {
-            return '/' . preg_replace(
+            return preg_replace(
 
-                    preg_replace(
-                        "~^.*$~i",
-                        "~\{$0\}~i",
-                        array_keys($vars)
-                    ),
+                preg_replace(
+                    "~^.*$~i",
+                    "~\{$0\}~i",
+                    array_keys($vars)
+                ),
 
-                    $vars,
+                $vars,
 
-
-                    array_search(
-                        strtolower($handler),
-                        array_map(
-                            'strtolower',
-                            $this->dispatcher
-                        )
+                array_search(
+                    strtolower($handler),
+                    array_map(
+                        'strtolower',
+                        $this->dispatcher
                     )
+                )
 
-                );
+            );
         } else {
-            $handler = explode('/', $handler);
-
-            return "?t=$handler[0]&a=$handler[1]&" . http_build_query($vars);
+            return $this->noCleanEncodeUri($handler, $vars);
         }
 
-
     }
+
+    private function noCleanEncodeUri(string $handler, array $vars = []): string
+    {
+        $handler = explode('/', $handler);
+
+        return "?t=$handler[0]&a=$handler[1]" . (empty($vars) ? '' : '&' . http_build_query($vars));
+    }
+
 
 }
